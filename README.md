@@ -23,21 +23,23 @@ At the moment, it's difficult to suggest any specific divison of the project, no
 ## Part 1
 What did we do?
 - basic mechanics of the game and abstraction necessary for the further development
-- Move system, hitbox system
-- Generating map based on a file 
-- Simple main menu
-- Player shooting with arrow keys
-- Bullets destroying other bullets
-- Player moving with WSAD keys
-- Enemy moving towards player
+- Move system (description in file move_system.rs)
+- Hitbox system
+- Generating map based on a file (parsing using Serde)
+- Simple main menu (using system sets and scheduling using enum AppState)
+- Player shooting with arrow keys (using move system, hitbox, Query, Commands, keyboard input)
+- Bullets destroying other bullets (using move system, hitbox, Query, Commands)
+- Player moving with WSAD keys (using move system, hitbox, Query, Commands, keyboard input)
+- Enemy moving towards player (based on the calculated distance vector and normalising it)
 - Scaling window while in game (while in menu wip)
-- Health system (just started implementing, tbd)
+- Health system (not finished, tbd)
 
 What will we do?
 - More, different enemies and levels
-- Health system
-- Work on mechanics, entity interaction (what happens when when player touches the enemy or bullet)
-
+- Health system, dying, despawnig...
+- Work on mechanics, entity interaction (what happens when when player touches the enemy or bullet)SS
+- Everithing better
+- Aesthetics ✨
 
 ## Libraries
 - [Bevy](https://bevyengine.org/)

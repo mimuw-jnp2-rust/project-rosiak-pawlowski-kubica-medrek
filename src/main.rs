@@ -1,4 +1,3 @@
-// !!! To get rid of !!!
 #![allow(unused)]
 
 use std::time::Duration;
@@ -10,7 +9,6 @@ use bevy::window::{WindowResizeConstraints, WindowResized};
 use crate::hitbox::Hitbox;
 use crate::window::WinSize;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-// use bevy::ecs::event::Events;
 
 mod common;
 mod enemy;
@@ -51,7 +49,6 @@ const WINDOW_MAX_HEIGHT: f32 = f32::INFINITY;
 enum AppState {
     MainMenu,
     InGame,
-    // maybe Paused,
 }
 
 /*===================
@@ -87,15 +84,10 @@ fn main() {
         // Diagnostic information about framerate.
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        //Custom plugins.
+        // Custom plugins.
         .add_plugin(MainMenuPlugin)
         .add_plugin(GamePlugin)
         .add_plugin(EnemyPlugin)
-        /*
-        // Framerate control so as to lower CPU usage.
-        // [Remember to comment/uncomment the dependency in Cargo.toml]
-        .add_plugin(bevy_framepace::FramepacePlugin::default())
-        */
         .add_startup_system_to_stage(StartupStage::PreStartup, load_textures)
         .add_system(resize_window)
         .add_plugin(MapPlugin)

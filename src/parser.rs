@@ -5,20 +5,20 @@ use crate::hitbox::Hitbox;
 use crate::move_system::MoveObjectType;
 use std::option::Option;
 
-// file i/o libraries
+// File i/o libraries:
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
 
-//JSON libraries
+//JSON libraries:
 use serde::{Deserialize, Serialize};
 use serde_json::{to_string, Result};
 
 pub type MapId = u32;
 const SAVES_PATH: &str = "saves/map";
 
-// Structure of objects not rendered yet
+// Structure of objects not rendered yet.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ParsedEntity {
     pub move_type: MoveObjectType,
@@ -30,13 +30,12 @@ pub struct Parser {
     entities: Vec<ParsedEntity>,
 }
 
-// returns unique string made from given ID (may be made more complicated if needed).
-
+// Returns unique string made from given ID (may be made more complicated if needed).
 pub fn get_string_from_id(id: &MapId) -> String {
     to_string(id).expect("Couldn't convert ID to String")
 }
 
-//returns full save path from given ID, place of saving can be changed with constant SAVES_PATH
+// Returns full save path from given ID, place of saving can be changed with constant SAVES_PATH.
 
 pub fn get_filename(id: &MapId) -> String {
     let mut filename_beginning: String = String::from(SAVES_PATH);
@@ -44,7 +43,7 @@ pub fn get_filename(id: &MapId) -> String {
     filename_beginning.push_str(&save_name);
     filename_beginning
 }
-// May be used to make JSON files from existing state of game, currently unused
+// May be used to make JSON files from existing state of game, currently unused.
 
 pub fn save_map(filename: &str, map: &[ParsedEntity]) {
     let mut output = File::create(filename);
@@ -60,7 +59,7 @@ pub fn save_map(filename: &str, map: &[ParsedEntity]) {
 }
 
 impl Parser {
-    //Parses file written in JSON format, return None if path or content is invalid
+    // Parses file written in JSON format, return None if path or content is invalid.
     pub fn new(id: MapId) -> Option<Parser> {
         let filename = get_filename(&id);
 
@@ -69,7 +68,6 @@ impl Parser {
 
         return match result {
             Ok(val) => {
-                // println!("{}", serde_json::to_string(&val).unwrap());
                 Some(Parser { entities: val })
             }
             Err(err) => {

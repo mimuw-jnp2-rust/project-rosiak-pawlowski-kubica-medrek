@@ -14,7 +14,7 @@ use crate::{hitbox, player, AppState, Player};
 
 use rand::Rng;
 
-const ENEMY_START_SPEED: f32 = 60.0;
+const ENEMY_START_SPEED: f32 = 20.0;
 const ENEMY_SIZE: f32 = 20.0;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, SystemLabel)]

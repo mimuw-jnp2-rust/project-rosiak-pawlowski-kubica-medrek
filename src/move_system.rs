@@ -15,30 +15,6 @@ use crate::player::PlayerMarker;
     When move_system detects collision of two objects it sends event of type CollisionEvent
 */
 
-/// Example of system doing something on collision
-#[allow(dead_code)]
-fn on_collision_example(
-    mut collision_reade: EventReader<CollisionEvent>,
-    query_player: Query<(&Transform), (With<PlayerMarker>)>,
-    query_enemy: Query<(&Transform), (Without<PlayerMarker>)>, // not actual way to acces enemies, enemies not implemented yet
-) {
-    for collision in collision_reade
-        .iter()
-        // Remove events that are not handled by system you are implementing
-        .filter(|c_ev| c_ev.object_type == Player && c_ev.collided_with_type == Enemy)
-    {
-        let player = query_player.get(collision.object_id);
-        let enemy = query_enemy.get(collision.collided_with_id);
-        if let (Ok((player_transform)), Ok((enemy_transform))) = (player, enemy) {
-            // here you can do something to objects that collided
-            info!(
-                "player_transform: {:?}, enemy_transform: {:?}",
-                player_transform, enemy_transform
-            )
-        }
-    }
-}
-
 pub struct MoveSystemPlugin;
 
 impl Plugin for MoveSystemPlugin {
@@ -74,11 +50,13 @@ pub struct CollisionEvent {
     pub collided_with_type: MoveObjectType,
 }
 
+ // Add to moving objects and static obstacles.
 #[derive(Component, Copy, Clone)]
-pub struct MoveSystemMarker; // add to moving objects and static obstacles
+pub struct MoveSystemMarker;
 
+// Add only to moving objects.
 #[derive(Component, Copy, Clone)]
-pub struct VelocityVector(pub Vec2); // add only to moving objects
+pub struct VelocityVector(pub Vec2); 
 
 #[derive(Component, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum MoveObjectType {
@@ -87,7 +65,6 @@ pub enum MoveObjectType {
     Player,
     Enemy,
     PlayerBullet,
-    // ...
 }
 
 #[derive(Bundle, Copy, Clone)]
@@ -134,15 +111,15 @@ impl MoveSystemObjectWithVelocity {
     }
 }
 
-// Clear velocity vectors before other systems start to modify it
+// Clear velocity vectors before other systems start to modify it.
 fn clear_velocity_vector(mut vector_query: Query<(&mut VelocityVector), (With<MoveSystemMarker>)>) {
     for (mut vector) in vector_query.iter_mut() {
         vector.0 = Vec2::ZERO;
     }
 }
 
-// completely ignore collision - collision has no effect on moving objects
-// and information about it is not passed to other systems
+// Completely ignore collision - collision has no effect on moving objects
+// and information about it is not passed to other systems.
 fn ignore_collision(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
     match (type_1, type_2) {
         (PlayerBullet, PlayerBullet) => false,
@@ -154,7 +131,7 @@ fn ignore_collision(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
     }
 }
 
-// send information about collision to other systems, but ignore its effect on moving objects
+// Send information about collision to other systems, but ignore its effect on moving objects.
 fn allow_overlap(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
     match (type_1, type_2) {
         _ => false,
@@ -162,7 +139,7 @@ fn allow_overlap(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
 }
 
 // Try to move objects accordingly to their velocity vectors,
-// after other systems modified those vectors
+// after other systems modified those vectors.
 fn move_system(
     time: Res<Time>,
     mut to_move_query: Query<
@@ -178,7 +155,6 @@ fn move_system(
     mut collision_writer: EventWriter<CollisionEvent>,
 ) {
     let delta_time = time.delta().as_secs_f32();
-    // println!("move run, delta_time: {}", delta_time);
     let to_move_iterator = to_move_query
         .iter_mut()
         .filter(|(_, __, &x, _, _)| x != MoveObjectType::Floor);

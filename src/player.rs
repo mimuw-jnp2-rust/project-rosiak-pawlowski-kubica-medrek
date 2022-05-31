@@ -15,7 +15,7 @@ use crate::window::WinSize;
 use crate::{hitbox, player, AppState, Player};
 
 const PLAYER_START_SPEED: f32 = 100.;
-const BULLET_START_SPEED: f32 = 5.;
+const BULLET_START_SPEED: f32 = 15.;
 const PLAYER_START_HEALTH: usize = 42;
 
 pub struct PlayerPlugin;
@@ -245,8 +245,6 @@ pub fn control_bullets(
                     });
             };
 
-            // przyda się do wyświetlania kiedyś potencjalnie, fajnie wiedzieć kiedy można strzelić
-            // println!("Cooldown percent: {}", 200. * timer.elapsed_secs());
             if timer.finished() {
                 spawn_bullets();
                 timer.reset();
@@ -254,8 +252,6 @@ pub fn control_bullets(
         }
     }
 }
-
-// W przyszłości można wyciągnąć do pliku bullet.rs
 
 fn bullet_movement(
     mut commands: Commands,
@@ -294,18 +290,8 @@ fn on_collision_bullet(
         .filter(|c_ev| c_ev.object_type == PlayerBullet)
     {
         let bullet = query_bullet.get(collision.object_id);
-        // let entity = query_entity.get(collision.collided_with_id);
         if let Ok((bullet_entity)) = bullet {
-            // Enemie and Player should handle their damage themselves
-            // if collision.collided_with_type == Player {
-            //     // Decrement health for player.
-            // } else if collision.collided_with_type == Enemy {
-            //     // Decrement health for enemy.
-            // }
-            commands.entity(bullet_entity).despawn(); /* TODO May despawn bullet before other systems
-                                                       * that need to access it, will have
-                                                       * a chance to do so. */
-            // TODO Consider giving bullet 1 HP and handling its death
+            commands.entity(bullet_entity).despawn();
         }
     }
 }

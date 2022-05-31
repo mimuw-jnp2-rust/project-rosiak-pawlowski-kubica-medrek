@@ -3,13 +3,6 @@
 use crate::AppState;
 use bevy::{prelude::*, ui::FocusPolicy};
 
-// unused, but it will be used
-enum ButtonType {
-    Start,
-    Options,
-    Exit,
-}
-
 struct UiAssets {
     font: Handle<Font>,
     button: Handle<Image>,

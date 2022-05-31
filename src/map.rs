@@ -208,7 +208,6 @@ fn fetch_map(id: MapId, textures: &Res<Vec<TextureWrapper>>) -> Option<Map> {
         for parsed_entity in parser.iter() {
             if let Some(texture) = get_texture(parsed_entity.move_type, textures) {
                 map.insert(MapEntity::new((*parsed_entity).clone(), texture));
-                // to be changed so as to avoid copying!
             }
         }
         Some(map)
@@ -314,12 +313,6 @@ fn render_map(
                 "[render_map] The map of id {} has not been loaded. Fetching the map...",
                 id
             );
-            // if let Some(map) = fetch_map(*id) {
-            //     render(&map);
-            //     maps.insert(*id, map);
-            // } else {
-            //     eprintln!("[render_map] Fetching the map of id {} has failed.", id);
-            // }
         }
     }
 }
@@ -352,23 +345,3 @@ fn unrender_map(
         }
     }
 }
-
-// struct TextureWrapper {
-//     texture: Handle<Image>,
-//     object_type: MoveObjectType,
-// }
-
-// fn load_textures(mut commands: Commands, asset_server: Res<AssetServer>) {
-//     let wall: Handle<Image> = asset_server.load("wall.png");
-//     let floor: Handle<Image> = asset_server.load("floor.png");
-//     let wall_wrapper = TextureWrapper {
-//         texture: wall,
-//         object_type: MoveObjectType::Obstacle,
-//     };
-//     let floor_wrapper = TextureWrapper {
-//         texture: floor,
-//         object_type: MoveObjectType::Floor,
-//     };
-//     let textures = vec![wall_wrapper, floor_wrapper];
-//     commands.insert_resource(textures);
-// }
