@@ -38,7 +38,7 @@ What will we do?
 - More, different enemies and levels
 - Health system, dying, despawnig...
 - Work on mechanics, entity interaction (what happens when when player touches the enemy or bullet)SS
-- Everithing better
+- Everything better
 - Aesthetics ✨
 
 ## Libraries
