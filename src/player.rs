@@ -3,6 +3,8 @@ use bevy::prelude::*;
 use std::time::Duration;
 
 use crate::common::{EntityType, TextureWrapper};
+use crate::enemy::EnemyMarker;
+use crate::health_system::{DeathEvent, HealthData, ModifyHealth, ReadDeaths, TakeDamageEvent};
 use crate::hitbox::Hitbox;
 use crate::move_system::MoveObjectType::{Enemy, PlayerBullet};
 use crate::move_system::{
@@ -11,15 +13,12 @@ use crate::move_system::{
 };
 use crate::window::WinSize;
 use crate::{hitbox, player, AppState, Player};
-use crate::enemy::EnemyMarker;
-use crate::health_system::{DeathEvent, HealthData, ModifyHealth, ReadDeaths, TakeDamageEvent};
 
 const PLAYER_START_SPEED: f32 = 100.;
 const BULLET_START_SPEED: f32 = 5.;
 const PLAYER_START_HEALTH: usize = 42;
 
 pub struct PlayerPlugin;
-
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -30,7 +29,7 @@ impl Plugin for PlayerPlugin {
                 .with_system(control_bullets)
                 .with_system(on_collision_bullet.label(HandleCollisionEvents))
                 .with_system(player_takes_damage.label(ModifyHealth))
-                .with_system(player_dies.label(ReadDeaths))
+                .with_system(player_dies.label(ReadDeaths)),
         )
         .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(spawn_player));
     }
@@ -170,12 +169,18 @@ fn player_takes_damage(
     mut bullets: Query<(Entity), (With<BulletMarker>)>,
 ) {
     for collision in collision_reade.iter() {
-        if let (Ok(player), Ok(bullet)) = (players.get(collision.object_id), bullets.get(collision.collided_with_id)) {
+        if let (Ok(player), Ok(bullet)) = (
+            players.get(collision.object_id),
+            bullets.get(collision.collided_with_id),
+        ) {
             damage_writer.send(TakeDamageEvent {
                 id: player,
                 amount: 1,
             });
-        } else if let (Ok(player), Ok(enemie)) = (players.get(collision.object_id), enemies.get(collision.collided_with_id)) {
+        } else if let (Ok(player), Ok(enemie)) = (
+            players.get(collision.object_id),
+            enemies.get(collision.collided_with_id),
+        ) {
             // Now its the same as for collision with bullet,
             // but in the futer calculating damage amount might be different
             damage_writer.send(TakeDamageEvent {

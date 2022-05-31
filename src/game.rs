@@ -1,10 +1,10 @@
+use crate::health_system::HealthPlugin;
 use crate::{
     map, AppState, EnemyPlugin, LoadMap, MoveSystemPlugin, PlayerPlugin, RenderMap, UnrenderMap,
     WinSize,
 };
 use bevy::prelude::*;
 use std::time::Duration;
-use crate::health_system::HealthPlugin;
 
 pub struct GamePlugin;
 

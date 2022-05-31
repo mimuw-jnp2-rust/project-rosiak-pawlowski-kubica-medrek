@@ -2,13 +2,15 @@ use bevy::ecs::event::Events;
 use bevy::prelude::*;
 
 use crate::common::{EntityType, TextureWrapper};
-use crate::move_system::{CollisionEvent, ModifyVelocity, MoveSystemObjectWithVelocity, VelocityVector};
+use crate::move_system::{
+    CollisionEvent, ModifyVelocity, MoveSystemObjectWithVelocity, VelocityVector,
+};
 use crate::player::{BulletMarker, PlayerMarker, Speed};
 
+use crate::health_system::{DeathEvent, HealthData, ModifyHealth, ReadDeaths, TakeDamageEvent};
 use crate::hitbox::Hitbox;
 use crate::move_system::MoveObjectType;
 use crate::{hitbox, player, AppState, Player};
-use crate::health_system::{DeathEvent, HealthData, ModifyHealth, ReadDeaths, TakeDamageEvent};
 
 use rand::Rng;
 
@@ -23,12 +25,14 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Events::<SpawnEnemies>::default())
-            .add_system_set(SystemSet::on_update(AppState::InGame)
-            .with_system(spawn_enemies.label(SpawnEnemy))
-            .with_system(move_enemies.label(ModifyVelocity))
-            .with_system(enemies_take_damage.label(ModifyHealth))
-            .with_system(despawn_dead_enemies.label(ReadDeaths))
-        ).add_system_set(SystemSet::on_enter(AppState::InGame).with_system(setup_enemies));
+            .add_system_set(
+                SystemSet::on_update(AppState::InGame)
+                    .with_system(spawn_enemies.label(SpawnEnemy))
+                    .with_system(move_enemies.label(ModifyVelocity))
+                    .with_system(enemies_take_damage.label(ModifyHealth))
+                    .with_system(despawn_dead_enemies.label(ReadDeaths)),
+            )
+            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(setup_enemies));
     }
 }
 
@@ -60,9 +64,10 @@ impl EnemyBundle {
 
 fn spawn_enemy(commands: &mut Commands, x: f32, y: f32, texture: Handle<Image>) {
     commands
-        .spawn_bundle(EnemyBundle::new(hitbox::Hitbox::new_rectangle(Vec2::new(
-            ENEMY_SIZE, ENEMY_SIZE,
-        )), 20))
+        .spawn_bundle(EnemyBundle::new(
+            hitbox::Hitbox::new_rectangle(Vec2::new(ENEMY_SIZE, ENEMY_SIZE)),
+            20,
+        ))
         .insert_bundle(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(ENEMY_SIZE, ENEMY_SIZE)),
@@ -174,7 +179,10 @@ fn enemies_take_damage(
     mut bullets: Query<(Entity), (With<BulletMarker>)>,
 ) {
     for collision in collision_reade.iter() {
-        if let (Ok(enemie), Ok(bullet)) = (enemies.get(collision.object_id), bullets.get(collision.collided_with_id)) {
+        if let (Ok(enemie), Ok(bullet)) = (
+            enemies.get(collision.object_id),
+            bullets.get(collision.collided_with_id),
+        ) {
             damage_writer.send(TakeDamageEvent {
                 id: enemie,
                 amount: 1,
