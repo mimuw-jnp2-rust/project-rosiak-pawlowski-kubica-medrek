@@ -67,9 +67,7 @@ impl Parser {
         let result: Result<Vec<ParsedEntity>> = serde_json::from_str(&contents);
 
         return match result {
-            Ok(val) => {
-                Some(Parser { entities: val })
-            }
+            Ok(val) => Some(Parser { entities: val }),
             Err(err) => {
                 println!("Incorrect file content");
                 None

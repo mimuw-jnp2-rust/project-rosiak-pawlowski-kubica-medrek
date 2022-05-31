@@ -50,13 +50,13 @@ pub struct CollisionEvent {
     pub collided_with_type: MoveObjectType,
 }
 
- // Add to moving objects and static obstacles.
+// Add to moving objects and static obstacles.
 #[derive(Component, Copy, Clone)]
 pub struct MoveSystemMarker;
 
 // Add only to moving objects.
 #[derive(Component, Copy, Clone)]
-pub struct VelocityVector(pub Vec2); 
+pub struct VelocityVector(pub Vec2);
 
 #[derive(Component, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum MoveObjectType {
@@ -127,6 +127,7 @@ fn ignore_collision(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
         (Player, Floor) | (Floor, Player) => true,
         (Enemy, Floor) | (Floor, Enemy) => true,
         (PlayerBullet, Floor) | (Floor, PlayerBullet) => true,
+        (Enemy, Enemy) => true,
         _ => false,
     }
 }

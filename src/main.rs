@@ -36,7 +36,7 @@ use parser::MapId;
     CONSTANTS
 ================*/
 
-const WINDOW_TITLE: &str = "TEST [WIP]";
+const WINDOW_TITLE: &str = "super giera";
 const WINDOW_WIDTH: f32 = 1000.0;
 const WINDOW_HEIGHT: f32 = 600.0;
 
