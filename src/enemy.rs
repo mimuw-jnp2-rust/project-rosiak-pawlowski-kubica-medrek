@@ -178,11 +178,12 @@ fn enemies_take_damage(
     mut enemies: Query<(Entity), (With<EnemyMarker>)>,
     mut bullets: Query<(Entity), (With<BulletMarker>)>,
 ) {
-    for collision in collision_reade.iter() {
-        if let (Ok(enemie), Ok(bullet)) = (
-            enemies.get(collision.object_id),
-            bullets.get(collision.collided_with_id),
-        ) {
+    for collision in collision_reade.iter().filter(|col| {
+        col.object_type == MoveObjectType::Enemy
+            && col.collided_with_type == MoveObjectType::PlayerBullet
+    }) {
+        // info!("collision");
+        if let Ok(enemie) = enemies.get(collision.object_id) {
             damage_writer.send(TakeDamageEvent {
                 id: enemie,
                 amount: 1,
