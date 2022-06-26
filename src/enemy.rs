@@ -194,8 +194,8 @@ pub struct SpawnEnemies {
 fn get_random_free_position(other_objects: &Vec<(Vec2, Hitbox)>, hitbox: Hitbox) -> Vec2 {
     let get_random_position = || {
         Vec2::new(
-            rand::thread_rng().gen_range(-(WINDOW_WIDTH / 2.)..(WINDOW_WIDTH / 2.)) as f32,
-            rand::thread_rng().gen_range(-(WINDOW_HEIGHT / 2.)..(WINDOW_HEIGHT / 2.)) as f32,
+            rand::thread_rng().gen_range(-(WINDOW_WIDTH / 2. - 50.)..(WINDOW_WIDTH / 2. - 50.)) as f32,
+            rand::thread_rng().gen_range(-(WINDOW_HEIGHT / 2. - 50.)..(WINDOW_HEIGHT / 2. - 50.)) as f32,
         )
     };
 
