@@ -1,25 +1,21 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-/// Position of an entity.
-///
-/// Maintenance note:
-///     Might be replaced by Bevy's Vec2 or Vec3.
-///     The 3-dimensional type would probably be better
-///     since we *would* like to have entities
-///     displayed properly, i.e. a player *on* a floor tile, etc.
-///     no matter what the order of the rendered entities is.
+// Position of an entity.
 #[derive(Component, Clone, Copy, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct Position(pub f32, pub f32);
 
+// Type of the entity.
 #[derive(Clone, Copy, PartialEq)]
 pub enum EntityType {
     Wall,
     Floor,
     Player,
     Enemy,
+    Bones,
 }
 
+// Information about given texture.
 struct TextureInfo {
     path: &'static str,
     owner_type: EntityType,
@@ -42,6 +38,10 @@ const TEXTURES: &[TextureInfo] = &[
         path: "player.png",
         owner_type: EntityType::Player,
     },
+    TextureInfo {
+        path: "bones.png",
+        owner_type: EntityType::Bones,
+    },
 ];
 
 pub struct TextureWrapper {
@@ -49,6 +49,7 @@ pub struct TextureWrapper {
     pub owner_type: EntityType,
 }
 
+// Loads textures.
 pub fn load_textures(mut commands: Commands, asset_server: Res<AssetServer>) {
     let load_texture = |path: &str, owner_type: EntityType| {
         let texture = asset_server.load(path);

@@ -1,16 +1,16 @@
 use crate::move_system::MoveObjectType::*;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::ops::Add;
+use std::cmp::min;
 
 use crate::hitbox::Hitbox;
-use crate::player::PlayerMarker;
+use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
 /*
     This system moves object accordingly to value of their VelocityVector, this vector has to be
     set by other system every frame, because it is cleared (set to ZERO) at the beginning of event
     loop iteration. Systems that modify VelocityVector should have label ModifyVelocity, this will
-    ensure that the execute after clearing vector and before moving objects.
+    ensure that they execute after clearing vector and before moving objects.
 
     When move_system detects collision of two objects it sends event of type CollisionEvent
 */
@@ -55,16 +55,17 @@ pub struct CollisionEvent {
 pub struct MoveSystemMarker;
 
 // Add only to moving objects.
-#[derive(Component, Copy, Clone)]
+#[derive(Component, Copy, Clone, Debug)]
 pub struct VelocityVector(pub Vec2);
 
-#[derive(Component, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Component, Copy, Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub enum MoveObjectType {
     Obstacle,
     Floor,
     Player,
     Enemy,
     PlayerBullet,
+    EnemyBullet,
 }
 
 #[derive(Bundle, Copy, Clone)]
@@ -112,8 +113,8 @@ impl MoveSystemObjectWithVelocity {
 }
 
 // Clear velocity vectors before other systems start to modify it.
-fn clear_velocity_vector(mut vector_query: Query<(&mut VelocityVector), (With<MoveSystemMarker>)>) {
-    for (mut vector) in vector_query.iter_mut() {
+fn clear_velocity_vector(mut vector_query: Query<&mut VelocityVector, With<MoveSystemMarker>>) {
+    for mut vector in vector_query.iter_mut() {
         vector.0 = Vec2::ZERO;
     }
 }
@@ -127,6 +128,8 @@ fn ignore_collision(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
         (Player, Floor) | (Floor, Player) => true,
         (Enemy, Floor) | (Floor, Enemy) => true,
         (PlayerBullet, Floor) | (Floor, PlayerBullet) => true,
+        (Enemy, EnemyBullet) | (EnemyBullet, Enemy) => true,
+        (EnemyBullet, Floor) | (Floor, EnemyBullet) => true,
         (Enemy, Enemy) => true,
         _ => false,
     }
@@ -137,6 +140,19 @@ fn allow_overlap(type_1: &MoveObjectType, type_2: &MoveObjectType) -> bool {
     match (type_1, type_2) {
         _ => false,
     }
+}
+
+// ZONE_SIZE hase to be bigger then size of any object using move system.
+const ZONE_SIZE: f32 = 100.;
+const ZONES_HORIZONTALLY: usize = (WINDOW_WIDTH / ZONE_SIZE) as usize + 1;
+const ZONES_VERTICALLY: usize = (WINDOW_HEIGHT / ZONE_SIZE) as usize + 1;
+
+fn get_zone(position: &Vec2) -> (usize, usize) {
+    let x = position.x + WINDOW_WIDTH / 2.;
+    let y = position.y + WINDOW_HEIGHT / 2.;
+    let x = (x / ZONE_SIZE) as usize;
+    let y = (y / ZONE_SIZE) as usize;
+    (min(x, ZONES_HORIZONTALLY - 1), min(y, ZONES_VERTICALLY - 1))
 }
 
 // Try to move objects accordingly to their velocity vectors,
@@ -151,66 +167,92 @@ fn move_system(
             Option<&VelocityVector>,
             Entity,
         ),
-        (With<MoveSystemMarker>),
+        With<MoveSystemMarker>,
     >,
     mut collision_writer: EventWriter<CollisionEvent>,
 ) {
     let delta_time = time.delta().as_secs_f32();
-    let to_move_iterator = to_move_query
-        .iter_mut()
-        .filter(|(_, __, &x, _, _)| x != MoveObjectType::Floor);
-    let mut to_move_vec = vec![];
-    for entry in to_move_iterator {
-        to_move_vec.push(entry);
-    }
-    let mut no_collision = vec![true; to_move_vec.len()];
-    let mut future_position = vec![];
-    for v in to_move_vec.iter() {
-        let mut pos = v.0.translation.truncate();
-        let vel_option = v.3;
-        match vel_option {
-            None => (),
-            Some(vel) => pos += (vel.0 * delta_time),
-        }
-        future_position.push(pos);
-    }
-    for i in 0..to_move_vec.len() {
-        for j in (i + 1)..to_move_vec.len() {
-            let (_, first_hitbox, first_type, _, first_id) = to_move_vec[i];
-            let (_, second_hitbox, second_type, _, second_id) = to_move_vec[j];
-            if ignore_collision(first_type, second_type) {
-                continue;
-            }
-            if Hitbox::check_collision(
-                first_hitbox,
-                future_position[i],
-                second_hitbox,
-                future_position[j],
-            ) {
-                if !allow_overlap(first_type, second_type) {
-                    no_collision[i] = false;
-                    no_collision[j] = false;
-                }
 
-                collision_writer.send(CollisionEvent {
-                    object_id: first_id,
-                    object_type: *first_type,
-                    collided_with_id: second_id,
-                    collided_with_type: *second_type,
+    let mut zones: [[Vec<_>; ZONES_VERTICALLY]; ZONES_HORIZONTALLY] = Default::default();
+    // Put every object to proper zone.
+    for object in to_move_query
+        .iter_mut()
+        .filter(|(_, _, t, _, _)| **t != MoveObjectType::Floor)
+    {
+        let current_position = object.0.translation.truncate();
+        let (x, y) = get_zone(&current_position);
+        let future_position = if let Some(velocity) = object.3 {
+            current_position + velocity.0 * delta_time
+        } else {
+            current_position
+        };
+        zones[x][y].push((object, future_position, false));
+    }
+
+    let mut zones_len = [[0; ZONES_VERTICALLY]; ZONES_HORIZONTALLY];
+    for i in 0..ZONES_HORIZONTALLY {
+        for j in 0..ZONES_VERTICALLY {
+            zones_len[i][j] = zones[i][j].len();
+        }
+    }
+    for i in 0..ZONES_HORIZONTALLY {
+        for j in 0..ZONES_VERTICALLY {
+            let current_zone = (i, j);
+            let mut bordering_zones = vec![];
+            for (x, y) in [(1, 0), (0, 1), (1, 1)] {
+                let (x, y) = (i + x, j + y);
+                if x < ZONES_HORIZONTALLY && y < ZONES_VERTICALLY {
+                    bordering_zones.push((x, y));
+                }
+            }
+            let current_zone_len = zones[current_zone.0][current_zone.1].len();
+            for i in 0..current_zone_len {
+                let rest_of_current =
+                    ((i + 1)..current_zone_len).map(|i| (current_zone.0, current_zone.1, i));
+                let other_zones = bordering_zones.iter_mut().flat_map(|(x, y)| {
+                    let (x, y) = (*x, *y);
+                    // Can't use zones here, because it creates borrow
+                    // and prevents creating mutable borrow later.
+                    (0..zones_len[x][y]).map(move |i| (x, y, i))
                 });
-                collision_writer.send(CollisionEvent {
-                    object_id: second_id,
-                    object_type: *second_type,
-                    collided_with_id: first_id,
-                    collided_with_type: *first_type,
-                });
+                let obj1 = (current_zone.0, current_zone.1, i);
+                for obj2 in rest_of_current.chain(other_zones) {
+                    let ((_, first_hitbox, first_type, _, first_id), first_fut_poss, _) =
+                        zones[obj1.0][obj1.1][obj1.2];
+                    let ((_, second_hitbox, second_type, _, second_id), second_fut_poss, _) =
+                        zones[obj2.0][obj2.1][obj2.2];
+                    if !ignore_collision(first_type, second_type)
+                        && Hitbox::check_collision(
+                            first_hitbox,
+                            first_fut_poss,
+                            second_hitbox,
+                            second_fut_poss,
+                        )
+                    {
+                        if !allow_overlap(first_type, second_type) {
+                            zones[obj1.0][obj1.1][obj1.2].2 = true;
+                            zones[obj2.0][obj2.1][obj2.2].2 = true;
+                        }
+                        collision_writer.send(CollisionEvent {
+                            object_id: first_id,
+                            object_type: *first_type,
+                            collided_with_id: second_id,
+                            collided_with_type: *second_type,
+                        });
+                        collision_writer.send(CollisionEvent {
+                            object_id: second_id,
+                            object_type: *second_type,
+                            collided_with_id: first_id,
+                            collided_with_type: *first_type,
+                        });
+                    }
+                }
             }
         }
     }
-    for i in 0..to_move_vec.len() {
-        if no_collision[i] {
-            to_move_vec[i].0.translation =
-                future_position[i].extend(to_move_vec[i].0.translation.z);
+    for ((transform, _, _, _, _), fut_pos, collision) in zones.iter_mut().flatten().flatten() {
+        if !*collision {
+            transform.translation = fut_pos.extend(transform.translation.z);
         }
     }
 }
